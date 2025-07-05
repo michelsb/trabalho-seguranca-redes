@@ -1,4 +1,4 @@
-## Proposta de Trabalho Prático: Implementação de Rede Segura com pfSense
+## Trabalho Prático de Segurança em Redes: Implementação de Rede Segura com pfSense
 
 ### Cenário da Empresa SecureNet Labs
 
@@ -19,14 +19,6 @@ O primeiro passo para o sucesso deste trabalho prático é a correta implantaç�
 Certifique-se de que seu computador (Host) atende aos seguintes requisitos mínimos e possui os softwares instalados:
 
 ##### 0.1.1. Requisitos de Hardware:
-
-As configurações das VMs no seu laboratório são as seguintes:
-
-  * **pfSense**: 1024 MB de RAM.
-  * **cliente**: 1024 MB de RAM.
-  * **honeypot**: 1024 MB de RAM.
-  * **internal-server**: 1024 MB de RAM.
-  * **external-server**: 1024 MB de RAM.
 
 Considerando que você terá 5 VMs, cada uma consumindo 1 GB de RAM, o consumo total de RAM das VMs será de 5 GB. Além disso, o sistema operacional do host e outros aplicativos também consomem RAM.
 
@@ -444,10 +436,6 @@ O aluno deverá testar cada regra de firewall, o proxy, os alertas do Snort e o 
 
 ### Requisitos de Entrega:
 
-  * **Repositório Git (URL)**: O aluno deverá fornecer a URL de seu próprio repositório no GitHub contendo:
-      * O `setup_lab.py` (pode ser o mesmo fornecido, sem alterações).
-      * O `pfsense_base_config.xml` **final e configurado** que ele utilizou no laboratório.
-      * O `Vagrantfile` **gerado** pelo `setup_lab.py` e utilizado no laboratório.
   * **Documentação (Relatório)**: Um documento detalhado (PDF ou Markdown no repositório) contendo:
       * A descrição de cada regra de firewall criada, com justificativa.
       * As configurações do NAT de Saída (Outbound NAT) para a LAN.
