@@ -277,7 +277,6 @@ O aluno deverá realizar as seguintes configurações no pfSense, registrando os
 2.  **Configuração de Regras**:
 
       * **Regras Padrão**: Configurar o Snort para baixar e atualizar as regras da comunidade (Oinkmaster Code ou Emerging Threats, configurando a chave Oinkcode, se necessário).
-      * **Alerta de Ping Bloqueado**: Criar uma regra customizada no Snort para gerar um alerta quando houver uma tentativa de ping (ICMP) da rede WAN para a rede LAN (ou especificamente para o `cliente`), mesmo que o firewall já a bloqueie. *Objetivo: Demonstrar que o Snort detecta atividades mesmo para tráfego que o firewall descarta.*
       * **Alerta de Acesso a Domínio Específico**: Criar uma regra customizada no Snort para gerar um alerta quando houver uma tentativa de acesso HTTP (porta 80) do `cliente` para o domínio `external-fake.com` (que está no `external-server`). *Isso simulará a detecção de acesso a um site indesejado ou potencialmente malicioso.*
 
 3.  **Monitoramento de Alertas**:
@@ -388,16 +387,7 @@ O aluno deverá testar cada regra de firewall, o proxy, os alertas do Snort e o 
       * Verifique o status do cache do Squid no pfSense (`Services` \> `Squid Proxy` \> `Realtime` ou `Cache`). Observe o aumento nos "Cache Hits".
       * Limpe o cache do Squid no pfSense. Acesse `http://external.com` novamente e observe o "Cache Miss" no log para confirmar que o cache foi limpo e recarregado.
 
-##### 5.3. Testes de Configuração do Snort:
-
-  * **Alerta de Ping Bloqueado (WAN para LAN)**:
-
-      * A partir da VM `external-server` (100.18.190.10), tente pingar a VM `cliente` (192.168.60.10):
-        ```bash
-        ping 192.168.60.10
-        ```
-      * *Esperado:* O ping deve falhar (bloqueado pelo firewall). No entanto, o Snort deve gerar um alerta.
-      * Verifique os logs de alerta do Snort no pfSense (`Services` \> `Snort` \> `Alerts`) para encontrar o alerta correspondente ao ping.
+##### 5.3. Testes de Configuração do Snort:  
 
   * **Alerta de Acesso a Domínio Específico (LAN via Proxy)**:
 
