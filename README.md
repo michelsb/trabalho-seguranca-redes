@@ -164,7 +164,7 @@ A infraestrutura de rede simulada neste laboratório segue a seguinte arquitetur
 
   * **pfSense**: Atua como o firewall central e roteador, interconectando todas as redes internas do laboratório.
 
-      * `NIC1` (`em0`): Configurada como NAT para gerenciamento (SSH) e acesso à internet do host. **Não é configurada explicitamente no pfSense para evitar conflitos.**
+      * `NIC1` (`em0`): Configurada pelo Vagrant como NAT para gerenciamento (SSH) e acesso à internet do host.
       * `NIC2` (`em1`): Conectada à rede Host-Only `internet_net` (simulando a WAN/Internet).
           * **IP configurado no pfSense:** `100.18.190.254/24`
       * `NIC3` (`em2`): Conectada à rede Host-Only `internal_net` (simulando a LAN interna).
@@ -177,7 +177,7 @@ A infraestrutura de rede simulada neste laboratório segue a seguinte arquitetur
 
   * **cliente**: Uma estação de trabalho simulando um usuário interno na rede LAN.
 
-      * `NIC1`: NAT (para acesso básico).
+      * `NIC1`: Configurada pelo Vagrant como NAT para gerenciamento (SSH) e acesso à internet do host.
       * `NIC2`: Conectada à rede Host-Only `internal_net`.
           * **IP:** `192.168.60.10/24`
           * **Gateway:** `192.168.60.254` (o pfSense)
@@ -185,7 +185,7 @@ A infraestrutura de rede simulada neste laboratório segue a seguinte arquitetur
 
   * **honeypot**: Um servidor dedicado a hospedar honeypots, localizado na DMZ1.
 
-      * `NIC1`: NAT.
+      * `NIC1`: Configurada pelo Vagrant como NAT para gerenciamento (SSH) e acesso à internet do host.
       * `NIC2`: Conectada à rede Host-Only `dmz1_net`.
           * **IP:** `200.19.100.10/24`
           * **Gateway:** `200.19.100.254` (o pfSense)
@@ -193,7 +193,7 @@ A infraestrutura de rede simulada neste laboratório segue a seguinte arquitetur
 
   * **internal-server**: Um servidor interno, localizado na DMZ2.
 
-      * `NIC1`: NAT.
+      * `NIC1`: Configurada pelo Vagrant como NAT para gerenciamento (SSH) e acesso à internet do host.
       * `NIC2`: Conectada à rede Host-Only `dmz2_net`.
           * **IP:** `200.19.200.10/24`
           * **Gateway:** `200.19.200.254` (o pfSense)
@@ -201,7 +201,7 @@ A infraestrutura de rede simulada neste laboratório segue a seguinte arquitetur
 
   * **external-server**: Um servidor simulando um recurso externo na rede "Internet" de laboratório.
 
-      * `NIC1`: NAT.
+      * `NIC1`: Configurada pelo Vagrant como NAT para gerenciamento (SSH) e acesso à internet do host.
       * `NIC2`: Conectada à rede Host-Only `internet_net`.
           * **IP:** `100.18.190.10/24`
           * **Gateway:** `100.18.190.254` (o pfSense)
@@ -228,9 +228,9 @@ O aluno deverá realizar as seguintes configurações no pfSense, registrando os
           * *Navegação na GUI:* `Firewall` \> `NAT` \> `Outbound`.
           * *Modo:* Mudar para `Hybrid Outbound NAT rule generation` ou `Manual Outbound NAT rule generation` (se não estiver já) e adicionar uma regra.
           * *Regra:* Origem: `LAN net`, Destino: `WAN net` (ou `100.18.190.0/24`), NAT de tradução para o endereço IP da interface WAN do pfSense.
-      * **Acesso à Internet (simulada)**: Permitir que o `cliente` (192.168.60.10) acesse o `external-server` (100.18.190.10) nas portas HTTP (80) e HTTPS (443).
+      * **Acesso à Internet (simulada)**: Permitir que o `cliente` (192.168.60.10) acesse o `external-server` (100.18.190.10) nas portas HTTP (80), HTTPS (443) e DNS (53).
       * **Acesso à DMZ1 (Honeypot)**: Bloquear todo o tráfego da LAN para o `honeypot` (200.19.100.10), exceto a porta SSH (22). *Objetivo: Demonstrar o controle de acesso a um segmento de rede isolado (DMZ).*
-      * **Acesso à DMZ2 (Internal Server)**: Permitir que o `cliente` acesse o `internal-server` (200.19.200.10) nas portas HTTP (80) e FTP (21).
+      * **Acesso à DMZ2 (Internal Server)**: Permitir que o `cliente` acesse o `internal-server` (200.19.200.10) nas portas HTTP (80), HTTPS (443) e FTP (21)
       * **Bloqueio Geral**: Criar uma regra final na interface LAN que bloqueie qualquer outro tráfego de saída não explicitamente permitido, para as redes DMZ1, DMZ2 e WAN.
 
 3.  **Regras de Firewall na WAN (Entrada)**:
@@ -241,9 +241,7 @@ O aluno deverá realizar as seguintes configurações no pfSense, registrando os
 4.  **Regras de Firewall nas DMZs (Entrada/Saída)**:
 
       * **DMZ1 (Honeypot)**:
-          * Bloquear o `honeypot` de iniciar qualquer conexão para a rede LAN.
-          * Permitir que o `honeypot` acesse a WAN apenas na porta 53 (DNS) e 80 (HTTP).
-          * Permitir que o `external-server` (100.18.190.10) ping o `honeypot` (200.19.100.10).
+          * Ver a Parte 4 (Configuração do Honeywall)          
       * **DMZ2 (Internal Server)**:
           * **Acesso do External Server**: Permitir que o `external-server` (100.18.190.10) acesse diretamente o `internal-server` (200.19.200.10) nas portas HTTP (80) e HTTPS (443).
           * Bloquear qualquer tráfego direto entre DMZ1 e DMZ2. *Objetivo: Enfatizar o isolamento entre diferentes DMZs.*
@@ -303,10 +301,11 @@ O aluno deverá realizar as seguintes configurações no pfSense, registrando os
 
       * Para evitar que um atacante que consiga invadir um honeypot na DMZ1 use essa máquina como pivô para invadir outras redes internas (como a LAN ou DMZ2), o aluno deverá configurar um **Honeywall** no pfSense. Um Honeywall é um firewall projetado para isolar honeypots.
       * **Tarefa**: Criar regras de firewall explícitas na interface **DMZ1** do pfSense que:
-          * Permitam que as portas dos honeypots (ex: 80 para Glastopf, 22 para Cowrie) na VM `honeypot` (200.19.100.10) recebam tráfego APENAS da rede WAN (simulada) e de IPs específicos de gerenciamento (se houver).
+          * Permitir que o `external-server` (100.18.190.10) ping o `honeypot` (200.19.100.10).
+          * Permitam que as portas dos honeypots (ex: 80 para Glastopf, 22 para Cowrie) na VM `honeypot` (200.19.100.10) recebam tráfego APENAS da rede WAN (simulada).
           * **Bloqueiem ABSOLUTAMENTE todo o tráfego de SAÍDA do `honeypot` para a rede LAN (`internal_net` - 192.168.60.0/24) e para a DMZ2 (`dmz2_net` - 200.19.200.0/24).**
           * Permitam tráfego de saída do `honeypot` para a WAN apenas para serviços essenciais (como DNS na porta 53, HTTP para download de regras/updates), mas de forma muito restritiva.
-          * Permitam o acesso SSH/gerenciamento do host ou de VMs específicas (como o `cliente`) para o `honeypot`, se necessário.
+          * Permitam o acesso SSH/gerenciamento do host ou de VMs específicas (como o `cliente`) para o `honeypot`.
       * *Objetivo: Isolar o honeypot, permitindo que ele seja atacado e monitore, mas impedindo que se torne uma base para ataques internos na rede da empresa.*
 
 #### Parte 5: Testes e Validação
@@ -326,22 +325,20 @@ O aluno deverá testar cada regra de firewall, o proxy, os alertas do Snort e o 
           * Testes de acesso HTTP/HTTPS ao `external-server` (100.18.190.10):
             ```bash
             # Para HTTP
-            curl http://100.18.190.10
-            # Para HTTPS (use --insecure se não configurar certificados no servidor)
-            curl https://100.18.190.10 --insecure
+            curl http://100.18.190.10 ou curl http://external.com
             ```
             *Esperado:* Resposta HTML do servidor, confirmando o acesso permitido e o NAT.
 
   * **Acesso Permitido (LAN para DMZ1/DMZ2)**:
 
       * A partir da VM `cliente` (192.168.60.10):
-          * Testes de acesso ao `internal-server` (200.19.200.10):
+          * Testes de acesso ao `internal-server` (200.19.200.10 - internal.com):
             ```bash
             # Para HTTP
-            curl http://200.19.200.10
+            curl http://200.19.200.10 ou curl http://internal.com
             # Para FTP:
-            ftp 200.19.200.10
-            # Quando solicitado, use as credenciais: usuário 'aluno', senha 'aluno'.
+            ftp 200.19.200.10 ou ftp internal.com
+            # Quando solicitado, use as credenciais: usuário 'aluno' (senha 'aluno' ou tente sem senha).
             ```
             *Esperado:* Respostas HTTP/FTP bem-sucedidas.
           * Testes de acesso SSH ao `honeypot` (200.19.100.10):
@@ -362,12 +359,10 @@ O aluno deverá testar cada regra de firewall, o proxy, os alertas do Snort e o 
   * **Acesso Direto (External Server para Internal Server)**:
 
       * A partir da VM `external-server` (100.18.190.10):
-          * Testes de acesso HTTP/HTTPS ao `internal-server` (200.19.200.10):
+          * Testes de acesso HTTP/HTTPS ao `internal-server` (200.19.200.10 - internal.com):
             ```bash
             # Para HTTP
-            curl http://200.19.200.10
-            # Para HTTPS (se o internal-server tiver HTTPS configurado, caso contrário use --insecure)
-            curl https://200.19.200.10 --insecure
+            curl http://200.19.200.10 ou curl http://internal.com
             ```
             *Esperado:* Resposta HTML do servidor, confirmando o acesso direto permitido.
 
