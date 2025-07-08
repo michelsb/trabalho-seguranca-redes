@@ -207,6 +207,61 @@ A infraestrutura de rede simulada neste laboratório segue a seguinte arquitetur
           * **Gateway:** `100.18.190.254` (o pfSense)
           * **DNS:** `8.8.8.8`
 
+```mermaid
+flowchart TD
+
+    %% Host Machine
+    subgraph Host_Machine [Host Machine]
+        direction TB
+        HostPC@{ icon: "fa:computer", form: "rounded", label: "Seu Computador Host", h:48 }
+        VBox@{ icon: "fa:box", form: "square", label: "VirtualBox", h:44 }
+        HostPC --> VBox
+    end
+
+    %% VirtualBox Networks
+    subgraph VBox_Networks [VirtualBox Networks]
+        direction TB
+        H1@{ icon: "fa:network-wired", form: "square", label: "wan_lab_network\n100.18.190.0/24", h:44 }
+        H2@{ icon: "fa:network-wired", form: "square", label: "internal_net\n192.168.60.0/24", h:44 }
+        H3@{ icon: "fa:network-wired", form: "square", label: "dmz1_net\n200.19.100.0/24", h:44 }
+        H4@{ icon: "fa:network-wired", form: "square", label: "dmz2_net\n200.19.200.0/24", h:44 }
+    end
+
+    %% Virtual Machines
+    subgraph Virtual_Machines [Virtual Machines]
+        direction TB
+        pfSense_VM@{ icon: "fa:shield-halved", form: "rounded", label: "pfSense\nFirewall/Roteador", h:48 }
+        Cliente_VM@{ icon: "fa:laptop", form: "square", label: "Cliente\nEstação de Trabalho", h:40 }
+        Honeypot_VM@{ icon: "fa:bug", form: "rounded", label: "Honeypot\nServidor DMZ1", h:40 }
+        InternalServer_VM@{ icon: "fa:server", form: "square", label: "Internal Server\nServ. DMZ2", h:40 }
+        ExternalServer_VM@{ icon: "fa:cloud", form: "rounded", label: "External Server\nServ. WAN Lab", h:40 }
+    end
+
+    %% Network interface connections (no NIC1)
+    pfSense_VM -- "NIC2: em1" --> H1
+    pfSense_VM -- "NIC3: em2" --> H2
+    pfSense_VM -- "NIC4: em3" --> H3
+    pfSense_VM -- "NIC5: em4" --> H4
+
+    H1 --> ExternalServer_VM
+    H2 --> Cliente_VM
+    H3 --> Honeypot_VM
+    H4 --> InternalServer_VM
+
+    %% Style and highlights
+    style pfSense_VM fill:#f9f,stroke:#333,stroke-width:2px
+    style Cliente_VM fill:#ccf,stroke:#333,stroke-width:1px
+    style Honeypot_VM fill:#fcc,stroke:#333,stroke-width:1px
+    style InternalServer_VM fill:#ffc,stroke:#333,stroke-width:1px
+    style ExternalServer_VM fill:#cfc,stroke:#333,stroke-width:1px
+    style H1 fill:#cef,stroke:#033,stroke-width:1.5px
+    style H2 fill:#eec,stroke:#253,stroke-width:1.5px
+    style H3 fill:#ecd,stroke:#733,stroke-width:1.5px
+    style H4 fill:#fcc,stroke:#933,stroke-width:1.5px
+
+    %% NIC1 removal means port forwarding/SSH notes are gone
+```
+
 -----
 
 ### Tarefas do Aluno:
