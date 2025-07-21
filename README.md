@@ -128,7 +128,11 @@ Considerando que você terá 5 VMs, cada uma consumindo 1 GB de RAM, o consumo t
         vagrant up
         ```
       * O Vagrant baixará as *boxes* necessárias (se ainda não as tiverem sido baixadas anteriormente) e iniciará todas as VMs definidas na topologia (pfSense, Cliente, Honeypot, Internal Server, External Server).
-      * Após a criação inicial da topologia, utilize `vagrant suspend` e `vagrant resume` para pausar e retomar as VMs. Isso economiza tempo e evita recriações desnecessárias.
+      * Após a criação inicial da topologia, utilize `vagrant suspend` e `vagrant resume` para pausar e retomar as VMs, respectivamente. Isso economiza tempo e evita recriações desnecessárias:
+        ```bash
+        vagrant suspend
+        vagrant resume
+        ```
       * **Observe:** O pfSense iniciará com sua configuração padrão de fábrica. A configuração inicial do sistema operacional das VMs Cliente, Honeypot, Internal Server e External Server será aplicada automaticamente pelo Vagrant.
 
 6.  **Importe o `pfsense_base_config.xml` na GUI do pfSense (Passo Obrigatório para o Aluno):**
