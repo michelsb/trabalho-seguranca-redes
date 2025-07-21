@@ -128,6 +128,7 @@ Considerando que você terá 5 VMs, cada uma consumindo 1 GB de RAM, o consumo t
         vagrant up
         ```
       * O Vagrant baixará as *boxes* necessárias (se ainda não as tiverem sido baixadas anteriormente) e iniciará todas as VMs definidas na topologia (pfSense, Cliente, Honeypot, Internal Server, External Server).
+      * Após a criação inicial da topologia, utilize `vagrant suspend` e `vagrant resume` para pausar e retomar as VMs. Isso economiza tempo e evita recriações desnecessárias.
       * **Observe:** O pfSense iniciará com sua configuração padrão de fábrica. A configuração inicial do sistema operacional das VMs Cliente, Honeypot, Internal Server e External Server será aplicada automaticamente pelo Vagrant.
 
 6.  **Importe o `pfsense_base_config.xml` na GUI do pfSense (Passo Obrigatório para o Aluno):**
@@ -153,6 +154,21 @@ Considerando que você terá 5 VMs, cada uma consumindo 1 GB de RAM, o consumo t
 
           * O pfSense irá processar o arquivo, aplicar as configurações e, em seguida, **reiniciar**. Este processo pode levar alguns minutos.
           * Após o reboot, ele deverá estar com as configurações carregadas do `config.xml` que você importou, e o laboratório estará pronto para que você inicie as tarefas de configuração detalhada.
+
+7.  **Atualize a versão do pfSense usando a GUI (Passo Obrigatório para o Aluno):**
+
+      * **Por que atualizar o Pfsense?**
+  
+          * É necessário atualizar o pfSense para conseguir instalar o Squid e o Snort. 
+  
+      * **Procedimento:**
+
+          *  Vá em Sistema > Atualizar > Configurações de Atualização (Aba)
+          *  Selecione “Versão estável anterior (2.4.X - Deprecated)” em vez de “Última versão estável (2.4.x)” na lista suspensa de Ramificações. Eu selecionei “Versão estável anterior (2.4.5 - Deprecated)”, mas ela só apareceu depois que selecionei “Versão estável anterior (2.4.4 - Deprecated)”, sai da tela e voltei
+          *  Clique em “Salvar”
+          *  Vá agora na Aba "Atualização de Sofware". Deve aparecer uma nova versão para instalação. Aí é só mandar ver.
+          *  Depois da instalação, o pfsense reiniciará. Então, será possível instalar os pacotes
+          *  **Observe:** Após a atualização, use apenas o vagrant suspend/resume para manter o estado da VM. 
 
 #### 0.3. Topologia de Rede do Laboratório:
 
@@ -347,6 +363,7 @@ O aluno deverá realizar as seguintes configurações no pfSense, registrando os
           * **Glastopf**:
               * **Descrição**: É um honeypot de baixo nível para servidores web que emula vulnerabilidades web comuns (como *Local File Inclusion*, *Remote File Inclusion*, *Cross-Site Scripting*). Seu propósito é enganar scanners de vulnerabilidades e *bots* maliciosos, coletando informações valiosas sobre suas táticas e ferramentas.
               * **Tarefa**: Instalar o Glastopf via Docker na VM `honeypot` (200.19.100.10) e garantir que ele esteja escutando na porta HTTP (80 ou outra, se necessário) do `honeypot`.
+              * **Observe**: Alguns alunos reportaram que ele não funciona mais. Nesse caso, você poderá implantar outro Honeypot Web de sua escolha. Não precisa nem usar Docker.
           * **Cowrie**:
               * **Descrição**: É um honeypot de médio nível que simula um servidor SSH e Telnet. Ele registra as interações de atacantes, incluindo senhas digitadas, comandos executados e arquivos baixados, fornecendo inteligência detalhada sobre ataques de força bruta, dicionário e exploração de credenciais.
               * **Tarefa**: Instalar o Cowrie via Docker na VM `honeypot` (200.19.100.10) e garantir que ele esteja escutando na porta SSH (22 ou outra) do `honeypot`.
@@ -474,7 +491,58 @@ O aluno deverá testar cada regra de firewall, o proxy, os alertas do Snort e o 
 
 -----
 
-### Requisitos de Entrega:
+## 💬 Suporte e Dicas para o Ambiente Virtual (Troubleshooting)
+
+Podemos agendar reuniões no **Google Meet** em horários específicos para as equipes que precisarem tirar dúvidas ou resolver questões mais complexas. Fiquem à vontade para sugerir dias e horários que funcionem melhor para vocês.
+
+> ⚠️ **Atenção:**  
+> Infelizmente, não consigo ajudar diretamente com problemas de travamento ou perda de configurações, pois não enfrentei essas situações no meu ambiente. Esses problemas geralmente estão relacionados a:
+>
+> - Falta de recursos de hardware (CPU/RAM insuficientes)  
+> - Conexão de internet instável ou indisponível  
+> - Instabilidades do VirtualBox (especialmente na versão para Linux, que considero bastante problemática)
+
+---
+
+## ✅ Dicas para Evitar Problemas e Melhorar o Desempenho
+
+1. **Salve as configurações do pfSense com frequência.**  
+   Como 95% do trabalho está nas configurações dele, é essencial evitar perdas. Você pode exportar as configurações ou até criar *snapshots* no VirtualBox para garantir segurança.
+
+2. **Use `vagrant up` apenas na primeira vez.**  
+   Após a criação inicial da topologia, utilize `vagrant suspend` e `vagrant resume` para pausar e retomar as VMs. Isso economiza tempo e evita recriações desnecessárias.
+
+3. **Atualize o pfSense antes de instalar pacotes.**  
+   Conforme mencionei anteriormente (Seção 0.2 - Item 7), é necessário atualizar o pfSense para conseguir instalar o **Squid** e o **Snort**. Após a atualização, continue usando apenas `suspend/resume` para manter o estado da VM.
+
+4. **Em caso de falta de recursos (CPU e RAM), mantenha apenas a VM do pfSense ativa durante a configuração.**  
+   * Isso reduz o uso de recursos. Você pode desligar as outras VMs usando:
+   - `vagrant suspend internal-server`
+   - `vagrant suspend external-server`
+   - `vagrant suspend client`
+   - `vagrant suspend honeypot`
+   * Então, quando finalizar as configurações, pode subir novamente, agora usando:
+   - `vagrant resume internal-server`
+   - `vagrant resume external-server`
+   - `vagrant resume client`
+   - `vagrant resume honeypot`
+
+5. **Se estiver enfrentando travamentos mesmo com bons recursos, ajuste as configurações.**  
+   Aumente a alocação de **CPU** e **RAM** das VMs no `Vagrantfile` ou diretamente no VirtualBox. Isso pode melhorar bastante a estabilidade.
+
+6. **As ferramentas sugeridas para honeypots são apenas referências.**  
+   Fiquem à vontade para usar outras ferramentas disponíveis na internet. Podem optar por soluções com ou sem **Docker**, conforme a preferência e familiaridade de vocês.
+
+7. **Para usar `ping` entre as VMs, é necessário configurar o pfSense.**  
+   Por padrão, o pfSense bloqueia tráfego ICMP entre interfaces. Para permitir testes de conectividade com `ping`, você deve:
+   - Acessar a interface web do pfSense.
+   - Ir até **Firewall > Rules** e selecionar a interface de origem.
+   - Criar uma nova regra permitindo tráfego do tipo **ICMP** (protocolo do `ping`) entre as interfaces desejadas.
+   - Aplicar as alterações e testar novamente.
+
+-----
+
+## Requisitos de Entrega (OBS: IGNORE ESTA PARTE):
 
   * **Documentação (Relatório)**: Um documento detalhado (PDF ou Markdown no repositório) contendo:
       * A descrição de cada regra de firewall criada, com justificativa.
