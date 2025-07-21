@@ -546,6 +546,98 @@ Podemos agendar reuniões no **Google Meet** em horários específicos para as e
 
 -----
 
+# 🧰 Corrigindo Permissões para Redes Host-Only no VirtualBox (Ubuntu ou outra distribuição baseada no Debian)
+
+## 📌 Problema
+Ao tentar criar uma rede *host-only* com `VBoxManage`, você pode encontrar erros como:
+
+```
+VBoxManage: error: Failed to create the host-only network interface
+VBoxManage: error: VBoxNetAdpCtl: Error while adding new interface: failed to open /dev/vboxnetctl: Permission denied
+```
+
+---
+
+## ✅ Solução Manual Passo a Passo
+
+### 1. Verifique se os módulos do VirtualBox estão carregados
+
+```bash
+lsmod | grep vbox
+```
+
+Se não aparecer nada, carregue manualmente:
+
+```bash
+sudo modprobe vboxnetadp
+sudo modprobe vboxnetflt
+```
+
+---
+
+### 2. Adicione seu usuário ao grupo `vboxusers`
+
+```bash
+sudo usermod -aG vboxusers $USER
+```
+
+> 🔁 Reinicie a sessão ou o sistema para aplicar a mudança.
+
+---
+
+### 3. Crie o arquivo `networks.conf` manualmente
+
+Esse arquivo é necessário para liberar faixas de IP que o VirtualBox pode usar para redes *host-only*, *bridged* ou *NAT*.
+
+#### 🔧 Etapas:
+
+1. Abra o terminal e execute:
+
+```bash
+sudo mkdir -p /etc/vbox
+sudo nano /etc/vbox/networks.conf
+```
+
+2. No editor `nano`, adicione a seguinte linha **exatamente como está** (com os espaços corretos):
+
+```
+* 0.0.0.0/0 ::/0
+```
+
+3. Salve e saia:
+   - Pressione `Ctrl + O` para salvar
+   - Pressione `Enter` para confirmar
+   - Pressione `Ctrl + X` para sair
+
+4. Ajuste as permissões do arquivo:
+
+```bash
+sudo chmod 644 /etc/vbox/networks.conf
+sudo chown root:root /etc/vbox/networks.conf
+```
+
+---
+
+### 4. Crie a interface host-only
+
+Rode novamente o script:
+
+```bash
+python setup_lab.py
+```
+
+---
+
+## 🧪 Verificação Final
+
+Verifique se a interface foi criada e se está com o IP correto:
+
+```bash
+VBoxManage list hostonlyifs
+```
+
+---
+
 ## Requisitos de Entrega (OBS: IGNORE ESTA PARTE):
 
   * **Documentação (Relatório)**: Um documento detalhado (PDF ou Markdown no repositório) contendo:
