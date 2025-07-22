@@ -66,12 +66,7 @@ Considerando que você terá 5 VMs, cada uma consumindo 1 GB de RAM, o consumo t
       * Baixe o pacote `.deb` do [site oficial do Vagrant](https://www.google.com/search?q=https://developer.hashicorp.com/vagrant/downloads).
       * Instale-o: `sudo dpkg -i vagrant_X.X.X_Y.deb` (substitua `X.X.X_Y` pela versão baixada, por exemplo, `2.4.1_amd64`).
       * Se houver erros de dependência, corrija-os: `sudo apt install -f`.
-4.  **Vagrant Plugin: `vagrant-vbguest`**
-      * Abra o terminal e instale o plugin:
-        ```bash
-        vagrant plugin install vagrant-vbguest
-        ```
-5.  **Python 3:**
+4.  **Python 3:**
       * O Python 3 geralmente já vem pré-instalado na maioria das distribuições Linux.
       * **Instale o módulo `venv` (se ainda não estiver presente):**
         ```bash
@@ -514,7 +509,14 @@ Podemos agendar reuniões no **Google Meet** em horários específicos para as e
    Como 95% do trabalho está nas configurações dele, é essencial evitar perdas. Você pode exportar as configurações ou até criar *snapshots* no VirtualBox para garantir segurança.
 
 2. **Use `vagrant up` apenas na primeira vez.**  
-   Após a criação inicial da topologia, utilize `vagrant suspend` e `vagrant resume` para pausar e retomar as VMs. Isso economiza tempo e evita recriações desnecessárias.
+   * Quando for criar a topologia pela primeira vez, use o `vagrant up`, esse comando criará todas as VM. Contudo, se tiver problemas de recursos o ideal é subir cada VM por vez, para evitar problemas de timeout: 
+     - `vagrant up pfsense`
+     - `vagrant up client`
+     - `vagrant up honeypot`
+     - `vagrant up internal-server`
+     - `vagrant up external-server`
+  * Caso alguma das VMs der problema de timeout na hora de subir, dê um timeout nela, em seguida um `vagrant destroy <nome da vm>` e um `vagrant up <nome da vm>`
+  * Após a criação inicial da topologia, utilize `vagrant suspend` e `vagrant resume` para pausar e retomar as VMs. Isso economiza tempo e evita recriações desnecessárias.1
 
 3. **Atualize o pfSense antes de instalar pacotes.**  
    Conforme mencionei anteriormente (Seção 0.2 - Item 7), é necessário atualizar o pfSense para conseguir instalar o **Squid** e o **Snort**. Após a atualização, continue usando apenas `suspend/resume` para manter o estado da VM.

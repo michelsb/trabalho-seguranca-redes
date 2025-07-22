@@ -67,6 +67,12 @@ vagrant_tpl = r'''
 Vagrant.configure("2") do |config|
   # desabilita pasta padrão
   config.vm.synced_folder ".", "/vagrant", disabled: true
+  # Disable automatic updates
+  config.vbguest.auto_update = false
+  # Alternatively, conditionally disable installation if the plugin is present
+  if Vagrant.has_plugin?("vagrant-vbguest")
+    config.vbguest.no_install = true
+  end
 
   internal_net = "{{ internal }}"
   dmz1_net     = "{{ dmz1 }}"
