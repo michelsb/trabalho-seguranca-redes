@@ -85,28 +85,28 @@ Vagrant.configure("2") do |config|
     pf.vm.hostname = "pfsense"
     pf.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--nic1", "nat"]
+      vb.customize ["modifyvm", :id, "--hostonlyadapter2", internet_net]
+      vb.customize ["modifyvm", :id, "--hostonlyadapter3", internal_net]
+      vb.customize ["modifyvm", :id, "--hostonlyadapter4", dmz1_net]
+      vb.customize ["modifyvm", :id, "--hostonlyadapter5", dmz2_net]
       vb.name   = "pfsense"
       vb.memory = 1024
       vb.cpus   = 2
     end    
 
     pf.vm.network "private_network", adapter: 2,
-                  hostonly: internet_net,
                   ip:       "100.18.190.254", netmask: "255.255.255.0"
 
     pf.vm.network "private_network", adapter: 3,
-                  hostonly: internal_net,
                   ip:       "192.168.60.254", netmask: "255.255.255.0"
 
     pf.vm.network "private_network", adapter: 4,
-                  hostonly: dmz1_net,
                   ip:       "200.19.100.254", netmask: "255.255.255.0"
 
     pf.vm.network "private_network", adapter: 5,
-                  hostonly: dmz2_net,
                   ip:       "200.19.200.254", netmask: "255.255.255.0"
 
-    pf.vm.network "forwarded_port", guest: 443, host: 8443, auto_correct: true    
+    pf.vm.network "forwarded_port", guest: 443, host: 8443, auto_correct: true
 
   end
 
@@ -117,17 +117,16 @@ Vagrant.configure("2") do |config|
     c.vm.provider "virtualbox" do |vb|
       vb.gui = true
       vb.customize ["modifyvm", :id, "--nic1", "nat"]
+      vb.customize ["modifyvm", :id, "--hostonlyadapter2", internal_net]
       vb.name   = "cliente"
       vb.memory = 1024
       vb.cpus   = 1
     end
 
-    c.vm.network "private_network", adapter: 2,
-                  hostonly: internal_net,
-                  ip:       "192.168.60.10", netmask: "255.255.255.0",
-                  gateway:  "192.168.60.254", dns: "8.8.8.8"
+    c.vm.network "private_network", adapter: 2,      
+                  ip:       "192.168.60.10", netmask: "255.255.255.0"
 
-    c.vm.provision "shell", inline: <<-SHELL
+    c.vm.provision "shell", run: "once", inline: <<-SHELL
       sudo apt-get update
       # hosts
       echo "200.19.200.10 internal.com"      | sudo tee -a /etc/hosts
@@ -151,17 +150,16 @@ Vagrant.configure("2") do |config|
     h.vm.hostname = "honeypot"
     h.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--nic1", "nat"]
+      vb.customize ["modifyvm", :id, "--hostonlyadapter2", dmz1_net]
       vb.name   = "honeypot"
       vb.memory = 1024
       vb.cpus   = 2
     end
 
     h.vm.network "private_network", adapter: 2,
-                  hostonly: dmz1_net,
-                  ip:       "200.19.100.10", netmask: "255.255.255.0",
-                  gateway:  "200.19.100.254", dns: "8.8.8.8"
+                  ip:       "200.19.100.10", netmask: "255.255.255.0"
 
-    h.vm.provision "shell", inline: <<-SHELL
+    h.vm.provision "shell", run: "once", inline: <<-SHELL
       sudo apt-get update
       sudo apt-get install -y docker.io docker-compose
       sudo systemctl enable --now docker
@@ -188,17 +186,16 @@ Vagrant.configure("2") do |config|
     w.vm.hostname = "internal-server"
     w.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--nic1", "nat"]
+      vb.customize ["modifyvm", :id, "--hostonlyadapter2", dmz2_net]
       vb.name   = "internal-server"
       vb.memory = 1024
       vb.cpus   = 1
     end
 
     w.vm.network "private_network", adapter: 2,
-                  hostonly: dmz2_net,
-                  ip:       "200.19.200.10", netmask: "255.255.255.0",
-                  gateway:  "200.19.200.254", dns: "8.8.8.8"
+                  ip:       "200.19.200.10", netmask: "255.255.255.0"
 
-    w.vm.provision "shell", inline: <<-SHELL
+    w.vm.provision "shell", run: "once", inline: <<-SHELL
       sudo apt-get update
       sudo apt-get install -y nginx vsftpd
       cat <<EOF | sudo tee /var/www/html/index.html
@@ -210,16 +207,31 @@ Vagrant.configure("2") do |config|
 EOF
       sudo systemctl enable --now nginx
 
-      sudo cp /etc/vsftpd.conf /etc/vsftpd.conf.orig
-      cat <<EOF | sudo tee -a /etc/vsftpd.conf
-listen=YES
-anonymous_enable=NO
-local_enable=YES
-write_enable=YES
-chroot_local_user=YES
-EOF
-      sudo useradd -m aluno -s /usr/sbin/nologin
-      echo "aluno:aluno" | sudo chpasswd
+      [ -f /etc/vsftpd.conf.orig ] || sudo cp /etc/vsftpd.conf /etc/vsftpd.conf.orig
+
+      for param in \
+        "listen=YES" \
+        "anonymous_enable=NO" \
+        "local_enable=YES" \
+        "write_enable=YES" \
+        "chroot_local_user=YES"
+      do
+        key=$(echo "$param" | cut -d= -f1)
+        sudo sed -i "s/^#\?$key=.*/$param/" /etc/vsftpd.conf || \
+        grep -q "^$param" /etc/vsftpd.conf || \
+        echo "$param" | sudo tee -a /etc/vsftpd.conf
+      done
+
+      # Verifica se o usuário já existe
+      if id aluno &>/dev/null; then
+        echo "Usuario 'aluno' já existe, pulando criacao."
+      else
+        echo "Criando usuario 'aluno'..."
+        sudo useradd -m aluno -s /usr/sbin/nologin
+        echo "aluno:aluno" | sudo chpasswd
+      fi
+
+      # Ativa o serviço
       sudo systemctl enable --now vsftpd
 
       # hosts
@@ -244,6 +256,7 @@ EOF
     k.vm.hostname = "external-server"
     k.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--nic1", "nat"]
+      vb.customize ["modifyvm", :id, "--hostonlyadapter2", internet_net]
       vb.name   = "external-server"
       vb.memory = 1024
       vb.cpus   = 1
@@ -251,11 +264,9 @@ EOF
     end
 
     k.vm.network "private_network", adapter: 2,
-                  hostonly: internet_net,
-                  ip:       "100.18.190.10", netmask: "255.255.255.0",
-                  gateway:  "100.18.190.254", dns: "8.8.8.8"
+                  ip:       "100.18.190.10", netmask: "255.255.255.0"
 
-    k.vm.provision "shell", inline: <<-SHELL
+    k.vm.provision "shell", run: "once", inline: <<-SHELL
       sudo apt-get update
       sudo apt-get install -y nginx
 
